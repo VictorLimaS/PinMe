@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import { v4 as uuid } from "uuid"
 import { locationService } from "../services/location.service"
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:5173"
+const FRONT_URL = process.env.FRONT_URL || "http://localhost:5173"
 
 interface Params {
   id: string
@@ -21,8 +21,8 @@ export const createLocation = (req: Request, res: Response) => {
 
   return res.json({
     id,
-    trackLink: `${BASE_URL}/track/${id}`,
-    viewLink: `${BASE_URL}/view/${id}`
+    trackLink: `${FRONT_URL}/track/${id}`,
+    viewLink: `${FRONT_URL}/view/${id}`
   })
 }
 
